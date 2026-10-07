@@ -1,0 +1,12 @@
+# Dependencies & build output
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+
+# Local tooling
+.claude/
+
+# Full-size Google Drive originals (the site uses the web-sized copies in src/assets/photos)
+src/assets/drive-photos/
