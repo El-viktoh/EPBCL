@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, Phone, ArrowRight } from 'lucide-react';
 import logoWhite from '../assets/brand/logo-white.png';
@@ -9,6 +9,8 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(88);
+  const headerRef = useRef(null);
   const location = useLocation();
 
   const isHomePage = location.pathname === '/';
@@ -21,6 +23,15 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // While the mobile menu is open: size it to the header and lock page scrolling behind it
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [mobileMenuOpen]);
+
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -28,7 +39,7 @@ const Navbar = () => {
   }, [location.pathname]);
 
   return (
-    <header className={`site-header ${isScrolled ? 'scrolled' : (isHomePage ? 'transparent' : 'scrolled')}`}>
+    <header ref={headerRef} className={`site-header ${isScrolled ? 'scrolled' : (isHomePage ? 'transparent' : 'scrolled')}`}>
       <div className="container nav-container">
         {/* Brand Logo */}
         <Link to="/" className={`brand-logo ${isHomePage && !isScrolled ? 'on-hero' : ''}`} aria-label="Eastern Prime Business Consult Ltd. home">
@@ -152,13 +163,14 @@ const Navbar = () => {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div style={{
-          position: 'fixed',
-          top: '70px',
+          // Anchored to the fixed header (not the viewport): the header's backdrop-filter
+          // becomes the containing block, so a viewport-based bottom: 0 would collapse the drawer
+          position: 'absolute',
+          top: '100%',
           left: 0,
           right: 0,
-          bottom: 0,
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
+          height: `calc(100dvh - ${headerHeight}px)`,
+          background: '#FFFFFF',
           overflowY: 'auto',
           padding: '2rem 1.5rem',
           zIndex: 999,
@@ -195,13 +207,14 @@ const Navbar = () => {
 
             {servicesDropdownOpen && (
               <div style={{ paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
-                <Link to="/services" style={{ fontWeight: 700, color: 'var(--accent-dark)', fontSize: '0.95rem' }}>
+                <Link to="/services" onClick={() => setMobileMenuOpen(false)} style={{ fontWeight: 700, color: 'var(--accent-dark)', fontSize: '0.95rem' }}>
                   Overview & Investment Program
                 </Link>
                 {servicesData.map((s) => (
                   <Link 
                     key={s.id} 
                     to={`/services/${s.slug}`}
+                    onClick={() => setMobileMenuOpen(false)}
                     style={{ fontSize: '0.92rem', color: 'var(--text-dark)', padding: '0.35rem 0' }}
                   >
                     • {s.title}
